@@ -7,7 +7,7 @@ from langgraph.runtime import get_runtime
 from sqlalchemy import select, or_, func
 from sqlalchemy.orm import selectinload
 
-from app.ai.context import RuntimeContext
+from app.ai.graph.context import RuntimeContext
 from app.ai.tools.schemas import SessionDetail, SessionSummary, ToolResult
 from app.models.classSession import ClassSession, SessionStatusEnum
 from app.models.course import Course

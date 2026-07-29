@@ -4,7 +4,7 @@ from pydantic import BaseModel, EmailStr, Field
 
 from app.models.student import GenderEnum
 
-from app.constants.roles import RoleEnum
+from app.core.constants import RoleEnum
 
 
 class MessageResponse(BaseModel):

@@ -58,7 +58,7 @@ from app.services.email_service import send_password_setup_email
 
 from app.core.config import settings
 
-from app.constants.roles import RoleEnum
+from app.core.constants import RoleEnum
 from app.utils.files import build_file_url
 from app.utils.progress import calculate_course_progress, calculate_student_progress
 

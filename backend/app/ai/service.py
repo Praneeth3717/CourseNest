@@ -103,30 +103,22 @@
 
 #         return conversation.id, answer
 
-
-# debug
-import time
-from pprint import pprint
-
-# app/ai/service.py
 from uuid import UUID
 
 from langchain_core.messages import AIMessage, HumanMessage
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.ai.context import RuntimeContext
-from app.ai.filler import is_filler_message, filler_reply
-from app.ai.graph import graph
-from app.ai.history import get_or_create_conversation, load_history, save_turn
-from app.ai.title import generate_conversation_title
-from app.models.user import User
-
-from groq import RateLimitError, APIStatusError, APIConnectionError, APITimeoutError
-
-from app.services.student_token_quota import (
-    enforce_token_quota,
-    consume_tokens,
+from app.ai.conversation.filler import is_filler_message, filler_reply
+from app.ai.conversation.history import (
+    get_or_create_conversation,
+    load_history,
+    save_turn,
 )
+from app.ai.conversation.titles import generate_conversation_title
+from app.ai.graph.context import RuntimeContext
+from app.ai.graph.runtime import run_graph, GraphInvocationError
+from app.models.user import User
+from app.services.student_token_quota import enforce_token_quota, consume_tokens
 
 NEW_CONVERSATION_TITLE = "New Chat"
 
@@ -146,13 +138,9 @@ class AIService:
         )
 
         needs_title = is_new or conversation.title == NEW_CONVERSATION_TITLE
-
         if needs_title:
             conversation.title = await generate_conversation_title(message)
 
-        # Deterministic short-circuit: pure acknowledgments never need the
-        # LLM at all -- zero tokens, zero tool calls, zero latency, and no
-        # risk of the model re-fetching or re-dumping prior data.
         if is_filler_message(message):
             answer = filler_reply()
             await save_turn(
@@ -163,78 +151,25 @@ class AIService:
         history = await load_history(db, conversation.id)
         state = {"messages": [*history, HumanMessage(content=message)]}
 
-        await enforce_token_quota(
-            db=db,
+        await enforce_token_quota(db=db, student_id=current_user.student.id)
+
+        context = RuntimeContext(
             student_id=current_user.student.id,
+            student_name=current_user.student.full_name,
+            db=db,
         )
 
         try:
-            context = RuntimeContext(
-                student_id=current_user.student.id,
-                student_name=current_user.student.full_name,
-                db=db,
-            )
-
-            print("\n" + "=" * 80)
-            print("GRAPH EXECUTION START")
-            print("=" * 80)
-            start = time.perf_counter()
-            result = None
-            async for event in graph.astream(
-                state,
-                context=context,
-                stream_mode="updates",
-            ):
-                print("\n" + "-" * 80)
-                for node_name, node_output in event.items():
-                    print(f"NODE: {node_name}")
-                    messages = node_output.get("messages", [])
-                    for msg in messages:
-                        print(f"\nMessage Type: {type(msg).__name__}")
-                        if hasattr(msg, "content"):
-                            print("Content:")
-                            print(msg.content)
-                        if hasattr(msg, "tool_calls") and msg.tool_calls:
-                            print("\nTool Calls:")
-                            pprint(msg.tool_calls)
-                        if hasattr(msg, "usage_metadata"):
-                            print("\nUsage:")
-                            pprint(msg.usage_metadata)
-                    result = node_output
-            print("\n" + "=" * 80)
-            print("GRAPH EXECUTION END")
-            print(f"Time: {time.perf_counter() - start:.2f} sec")
-            print("=" * 80)
-
-        except RateLimitError:
-            return conversation.id, (
-                "I'm getting a lot of requests right now and have hit a "
-                "temporary usage limit. Please try again in a few minutes."
-            )
-        except APITimeoutError:
-            return conversation.id, "That took too long to process. Please try again."
-        except APIConnectionError:
-            return conversation.id, (
-                "I'm having trouble connecting right now. Please check your "
-                "connection and try again in a moment."
-            )
-        except APIStatusError:
-            return conversation.id, (
-                "Something went wrong on my end while processing that. "
-                "Please try again shortly."
-            )
+            result = await run_graph(state, context)
+        except GraphInvocationError as exc:
+            return conversation.id, exc.user_message
 
         last_message = result["messages"][-1]
-
         usage = last_message.usage_metadata or {}
-        # print(f"Usage metadata: {usage}")
         total_tokens = usage.get("total_tokens", 0)
-
         if total_tokens > 0:
             await consume_tokens(
-                db=db,
-                student_id=current_user.student.id,
-                tokens_used=total_tokens,
+                db=db, student_id=current_user.student.id, tokens_used=total_tokens
             )
 
         answer = (
@@ -244,5 +179,4 @@ class AIService:
         )
 
         await save_turn(db, conversation.id, user_text=message, assistant_text=answer)
-
         return conversation.id, answer

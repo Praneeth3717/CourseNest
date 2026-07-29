@@ -15,8 +15,7 @@ from app.models.student import Student
 from app.models.enrollment import Enrollment
 
 from app.core.dependencies import require_role
-
-from app.constants.roles import RoleEnum
+from app.core.constants import RoleEnum
 
 from app.schemas.admin import (
     DashboardResponse,

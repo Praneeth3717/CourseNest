@@ -13,7 +13,7 @@ from app.ai.tools.sessions import (
     get_session_details,
 )
 
-from app.ai.tools.attendence import (
+from app.ai.tools.attendance import (
     list_my_attendance,
     get_attendance_summary,
 )

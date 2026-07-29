@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Response
 from sqlalchemy import delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.ai.history import get_conversation_detail, list_conversations
+from app.ai.conversation.history import get_conversation_detail, list_conversations
 from app.ai.service import AIService
 from app.core.dependencies import get_current_user
 from app.db.session import get_db

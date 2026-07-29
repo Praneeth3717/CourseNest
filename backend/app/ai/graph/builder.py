@@ -3,10 +3,10 @@ from langgraph.graph import StateGraph, START
 from langgraph.prebuilt import ToolNode, tools_condition
 from langgraph.runtime import get_runtime
 
-from app.ai.context import RuntimeContext
-from app.ai.model import llm
-from app.ai.system_prompt import SYSTEM_PROMPT
-from app.ai.state import GraphState
+from app.ai.graph.context import RuntimeContext
+from app.ai.graph.model import llm
+from app.ai.graph.prompts import SYSTEM_PROMPT
+from app.ai.graph.state import GraphState
 from app.ai.tools import chat_tools
 
 chat_model = llm.bind_tools(chat_tools)

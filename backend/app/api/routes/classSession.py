@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.constants.roles import RoleEnum
+from app.core.constants import RoleEnum
 from app.core.dependencies import require_role
 from app.db.session import get_db
 

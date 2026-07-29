@@ -1,6 +1,6 @@
 from langchain_core.messages import HumanMessage, SystemMessage
 
-from app.ai.model import llm
+from app.ai.graph.model import llm
 
 TITLE_SYSTEM_PROMPT = (
     "Summarize this message as a short, generic 4-5 word title. "

@@ -30,7 +30,7 @@ from app.models.attendance import Attendance
 
 from app.core.dependencies import require_role
 
-from app.constants.roles import RoleEnum
+from app.core.constants import RoleEnum
 from app.utils.files import build_file_url
 
 from app.schemas.course import (

@@ -5,7 +5,7 @@ from langgraph.runtime import get_runtime
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import selectinload
 
-from app.ai.context import RuntimeContext
+from app.ai.graph.context import RuntimeContext
 from app.ai.tools.schemas import (
     EnrollmentBrief,
     EnrollmentSummary,
