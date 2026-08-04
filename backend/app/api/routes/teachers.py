@@ -53,7 +53,7 @@ from app.schemas.course import CourseData, CourseStatus
 from app.api.routes.course import serialize_course
 from app.core.dependencies import require_role
 
-from app.core.tokens import (
+from app.core.security import (
     generate_password_token,
     get_password_token_expiry,
 )
@@ -62,7 +62,7 @@ from app.services.email_service import send_password_setup_email
 
 from app.core.config import settings
 
-from app.core.constants import RoleEnum
+from app.core.enums import RoleEnum
 from app.utils.files import build_file_url
 
 router = APIRouter(prefix="/teachers", tags=["Teachers"])

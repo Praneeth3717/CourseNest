@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.db.session import get_db
-from app.core.constants import RoleEnum
+from app.core.enums import RoleEnum
 from app.core.dependencies import require_role
 
 
@@ -36,9 +36,6 @@ from app.schemas.auth import (
 from app.core.security import (
     verify_password,
     hash_password,
-)
-
-from app.core.tokens import (
     create_access_token,
     create_refresh_token,
     get_refresh_token_expiry,

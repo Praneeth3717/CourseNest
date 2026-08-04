@@ -52,13 +52,13 @@ from app.api.routes.classSession import serialize_classSession
 
 from app.core.dependencies import require_role
 
-from app.core.tokens import generate_password_token, get_password_token_expiry
+from app.core.security import generate_password_token, get_password_token_expiry
 
 from app.services.email_service import send_password_setup_email
 
 from app.core.config import settings
 
-from app.core.constants import RoleEnum
+from app.core.enums import RoleEnum
 from app.utils.files import build_file_url
 from app.utils.progress import calculate_course_progress, calculate_student_progress
 

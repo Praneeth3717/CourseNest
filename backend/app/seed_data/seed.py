@@ -7,7 +7,7 @@ from app.models.user import User
 from app.core.config import settings
 from app.core.security import hash_password
 
-from app.core.constants import RoleEnum
+from app.core.enums import RoleEnum
 
 
 async def seed_roles(db: AsyncSession) -> None:
