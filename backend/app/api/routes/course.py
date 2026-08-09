@@ -31,7 +31,7 @@ from app.models.attendance import Attendance
 from app.core.dependencies import require_role
 
 from app.core.enums import RoleEnum
-from app.utils.files import build_file_url
+from app.utils.files import build_file_url, delete_file
 
 from app.schemas.course import (
     MessageResponse,
@@ -477,7 +477,7 @@ async def delete_course(
             detail="Course not found",
         )
 
-    thumbnail_path = course.thumbnail
+    course_img = course.thumbnail
 
     try:
         await db.delete(course)
@@ -486,8 +486,7 @@ async def delete_course(
         await db.rollback()
         raise
 
-    if thumbnail_path and os.path.exists(thumbnail_path):
-        os.remove(thumbnail_path)
+    delete_file(course_img)
 
     return {"message": "Course deleted successfully"}
 

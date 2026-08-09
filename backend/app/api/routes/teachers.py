@@ -63,7 +63,7 @@ from app.services.email_service import send_password_setup_email
 from app.core.config import settings
 
 from app.core.enums import RoleEnum
-from app.utils.files import build_file_url
+from app.utils.files import build_file_url, delete_file
 
 router = APIRouter(prefix="/teachers", tags=["Teachers"])
 
@@ -587,9 +587,12 @@ async def delete_teacher(
             detail="Teacher not found",
         )
 
-    await db.delete(teacher.user)
+    profile_img = teacher.profile_image
 
+    await db.delete(teacher.user)
     await db.commit()
+
+    delete_file(profile_img)
 
     return {"message": "Teacher deleted successfully"}
 

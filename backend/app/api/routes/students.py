@@ -59,7 +59,7 @@ from app.services.email_service import send_password_setup_email
 from app.core.config import settings
 
 from app.core.enums import RoleEnum
-from app.utils.files import build_file_url
+from app.utils.files import build_file_url, delete_file
 from app.utils.progress import calculate_course_progress, calculate_student_progress
 
 router = APIRouter(prefix="/students", tags=["Students"])
@@ -604,7 +604,10 @@ async def delete_student(
 ):
     result = await db.execute(
         select(Student)
-        .options(selectinload(Student.user))
+        .options(
+            selectinload(Student.user),
+            selectinload(Student.enrollments).selectinload(Enrollment.certificate),
+        )
         .where(Student.id == student_id)
     )
 
@@ -616,9 +619,21 @@ async def delete_student(
             detail="Student not found",
         )
 
-    await db.delete(student.user)
+    profile_img = student.profile_image
 
+    certificate_files = [
+        enrollement.certificate.storage_key
+        for enrollement in student.enrollments
+        if enrollement.certificate
+    ]
+
+    await db.delete(student.user)
     await db.commit()
+
+    delete_file(profile_img)
+    
+    for storage_key in certificate_files:
+        delete_file(storage_key)
 
     return {"message": "Student deleted successfully"}
 
