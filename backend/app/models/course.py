@@ -6,20 +6,14 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
-from app.models.classSession import ClassSession
-
 from app.db.base import Base
 
-from app.models.enrollment import Enrollment
+from app.core.enums import CourseStatus
 
-import enum
+from typing import TYPE_CHECKING
 
-
-class CourseStatus(str, enum.Enum):
-    DRAFT = "DRAFT"
-    ACTIVE = "ACTIVE"
-    COMPLETED = "COMPLETED"
-    ARCHIVED = "ARCHIVED"
+if TYPE_CHECKING:
+    from app.models import ClassSession, Enrollment
 
 
 class Course(Base):

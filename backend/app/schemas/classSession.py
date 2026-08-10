@@ -3,7 +3,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field
 
-from app.models.classSession import SessionStatusEnum
+from app.core.enums import SessionStatusEnum
 
 
 class MessageResponse(BaseModel):

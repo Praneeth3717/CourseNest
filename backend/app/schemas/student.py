@@ -3,8 +3,7 @@ from datetime import datetime, date
 
 from pydantic import BaseModel, EmailStr
 
-from app.models.student import GenderEnum
-from app.models.course import CourseStatus
+from app.core.enums import GenderEnum, CourseStatus
 
 
 class MessageResponse(BaseModel):

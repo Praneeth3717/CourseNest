@@ -10,7 +10,7 @@ from app.db.base import Base
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from app.models.chat_message import ChatMessage
+    from app.models import ChatMessage
 
 
 class Conversation(Base):

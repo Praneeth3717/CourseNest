@@ -6,8 +6,9 @@ from sqlalchemy import select, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.models.chat_message import ChatMessage, ChatRole
-from app.models.conversation import Conversation
+from app.models import ChatMessage, Conversation
+
+from app.core.enums import ChatRole
 
 MAX_HISTORY_MESSAGES = 20
 

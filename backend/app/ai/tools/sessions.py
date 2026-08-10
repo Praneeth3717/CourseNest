@@ -9,9 +9,9 @@ from sqlalchemy.orm import selectinload
 
 from app.ai.graph.context import RuntimeContext
 from app.ai.tools.schemas import SessionDetail, SessionSummary, ToolResult
-from app.models.classSession import ClassSession, SessionStatusEnum
-from app.models.course import Course
-from app.models.enrollment import Enrollment
+from app.models import ClassSession, Course, Enrollment
+
+from app.core.enums import SessionStatusEnum
 
 STATUS_BY_FILTER = {
     "upcoming": (SessionStatusEnum.ACCEPTED,),

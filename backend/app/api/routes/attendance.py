@@ -10,20 +10,19 @@ from sqlalchemy.orm import selectinload
 from app.db import session
 from app.db.session import get_db
 from app.core.dependencies import require_role
-from app.core.enums import RoleEnum
+from app.core.enums import RoleEnum, CourseStatus, SessionStatusEnum
 from app.utils.files import build_file_url
 
-from app.models.attendance import Attendance
-from app.models.classSession import (
+from app.models import (
+    Attendance,
     ClassSession,
-    SessionStatusEnum,
+    Enrollment,
+    Teacher,
+    Student,
+    User,
+    Course,
+    Certificate,
 )
-from app.models.enrollment import Enrollment
-from app.models.teacher import Teacher
-from app.models.student import Student
-from app.models.user import User
-from app.models.course import Course, CourseStatus
-from app.models.certificate import Certificate
 
 from app.schemas.attendance import (
     BulkAttendanceCreate,

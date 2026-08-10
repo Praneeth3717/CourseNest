@@ -6,14 +6,11 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.enums import RoleEnum
+from app.core.enums import RoleEnum, SessionStatusEnum
 from app.core.dependencies import require_role
 from app.db.session import get_db
 
-from app.models.classSession import ClassSession, SessionStatusEnum
-from app.models.course import Course
-from app.models.teacher import Teacher
-from app.models.user import User
+from app.models import ClassSession, Course, Teacher, User
 
 from app.schemas.classSession import (
     MessageResponse,

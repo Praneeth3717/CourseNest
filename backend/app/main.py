@@ -5,18 +5,20 @@ from fastapi.staticfiles import StaticFiles
 from app.db.base import Base
 from app.db.session import engine, AsyncSessionLocal
 
-from app.models.user import User
-from app.models.role import Role
-from app.models.student import Student
-from app.models.teacher import Teacher
-from app.models.course import Course
-from app.models.enrollment import Enrollment
-from app.models.classSession import ClassSession
-from app.models.attendance import Attendance
-from app.models.certificate import Certificate
-from app.models.conversation import Conversation
-from app.models.chat_message import ChatMessage
-from app.models.student_token_quota import StudentTokenQuota
+from app.models import (
+    User,
+    Role,
+    Student,
+    Teacher,
+    Course,
+    Enrollment,
+    ClassSession,
+    Attendance,
+    Certificate,
+    Conversation,
+    ChatMessage,
+    StudentTokenQuota,
+)
 
 from app.seed_data.seed import run_seed
 

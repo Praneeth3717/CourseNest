@@ -14,7 +14,7 @@ from app.core.enums import RoleEnum
 from app.core.dependencies import require_role
 
 
-from app.models.user import User
+from app.models import User
 from app.services.email_service import (
     send_password_reset_email,
     send_password_setup_email,

@@ -10,10 +10,7 @@ from sqlalchemy.sql import func
 
 from app.db.base import Base
 
-
-class AttendanceStatus(str, Enum):
-    PRESENT = "present"
-    ABSENT = "absent"
+from app.core.enums import AttendanceStatus
 
 
 class Attendance(Base):

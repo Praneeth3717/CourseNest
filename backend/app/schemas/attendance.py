@@ -2,7 +2,7 @@ from datetime import datetime
 from uuid import UUID
 from pydantic import BaseModel
 
-from app.models.attendance import AttendanceStatus
+from app.core.enums import AttendanceStatus
 
 
 class MessageResponse(BaseModel):

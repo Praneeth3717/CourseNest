@@ -12,12 +12,9 @@ from app.db.base import Base
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from app.models.conversation import Conversation
+    from app.models import Conversation
 
-
-class ChatRole(str, Enum):
-    USER = "user"
-    ASSISTANT = "assistant"
+from app.core.enums import ChatRole
 
 
 class ChatMessage(Base):

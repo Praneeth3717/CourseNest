@@ -4,8 +4,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict
 
-from app.models.course import CourseStatus
 from app.schemas.enrollment import CourseStudentResponse
+from app.core.enums import CourseStatus
 
 
 class MessageResponse(BaseModel):

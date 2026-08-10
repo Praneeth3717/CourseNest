@@ -1,8 +1,4 @@
-from app.models.classSession import SessionStatusEnum
-from app.models.attendance import AttendanceStatus
-
-
-from app.models.classSession import SessionStatusEnum
+from app.core.enums import SessionStatusEnum, AttendanceStatus
 
 
 def calculate_course_progress(course):
@@ -43,4 +39,3 @@ def calculate_student_progress(
     progress = (attended_hours / completed_teaching_hours) * 100
 
     return progress, attended_hours
- 

@@ -6,10 +6,7 @@ from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db
-from app.models.student import Student
-from app.models.course import Course
-from app.models.enrollment import Enrollment
-from app.models.user import User
+from app.models import Student, Course, Enrollment, User
 
 from app.schemas.enrollment import (
     MessageResponse,

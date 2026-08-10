@@ -23,15 +23,17 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db
 
-from app.models.user import User
-from app.models.role import Role
-from app.models.student import Student, GenderEnum
-from app.models.enrollment import Enrollment
-from app.models.classSession import ClassSession, SessionStatusEnum
-from app.models.course import Course, CourseStatus
-from app.models.attendance import Attendance, AttendanceStatus
-from app.models.certificate import Certificate
-from app.models.student_token_quota import StudentTokenQuota
+from app.models import (
+    User,
+    Role,
+    Student,
+    Enrollment,
+    ClassSession,
+    Course,
+    Attendance,
+    Certificate,
+    StudentTokenQuota,
+)
 
 from app.schemas.student import (
     CreateStudentRequest,
@@ -58,7 +60,14 @@ from app.services.email_service import send_password_setup_email
 
 from app.core.config import settings
 
-from app.core.enums import RoleEnum
+from app.core.enums import (
+    CourseStatus,
+    SessionStatusEnum,
+    AttendanceStatus,
+    RoleEnum,
+    GenderEnum,
+)
+
 from app.utils.files import build_file_url, delete_file
 from app.utils.progress import calculate_course_progress, calculate_student_progress
 
@@ -470,7 +479,9 @@ async def get_student_by_id(
         select(Student)
         .options(
             selectinload(Student.user),
-            selectinload(Student.enrollments).selectinload(Enrollment.course),
+            selectinload(Student.enrollments)
+            .selectinload(Enrollment.course)
+            .selectinload(Course.sessions),
         )
         .where(Student.id == student_id)
     )
@@ -631,7 +642,7 @@ async def delete_student(
     await db.commit()
 
     delete_file(profile_img)
-    
+
     for storage_key in certificate_files:
         delete_file(storage_key)
 

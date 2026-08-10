@@ -11,8 +11,7 @@ from app.ai.tools.schemas import (
     EnrollmentSummary,
     ToolResult,
 )
-from app.models.course import Course
-from app.models.enrollment import Enrollment
+from app.models import Course, Enrollment
 
 
 @tool

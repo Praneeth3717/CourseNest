@@ -6,11 +6,13 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
-from app.models.classSession import ClassSession
-from app.models.course import Course
-
 from app.db.base import Base
-from app.models.student import GenderEnum
+from app.core.enums import GenderEnum
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.models import Course, ClassSession
 
 
 class Teacher(Base):

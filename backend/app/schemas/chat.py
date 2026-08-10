@@ -3,7 +3,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.models.chat_message import ChatRole
+from app.core.enums import ChatRole
 
 
 class ChatRequest(BaseModel):

@@ -1,8 +1,7 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.role import Role
-from app.models.user import User
+from app.models import Role, User
 
 from app.core.config import settings
 from app.core.security import hash_password

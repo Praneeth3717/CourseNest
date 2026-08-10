@@ -2,10 +2,7 @@ from uuid import UUID
 from datetime import datetime, date
 from pydantic import BaseModel, EmailStr, Field
 
-from app.models.student import GenderEnum
-
-from app.core.enums import RoleEnum
-
+from app.core.enums import RoleEnum, GenderEnum
 
 class MessageResponse(BaseModel):
     message: str

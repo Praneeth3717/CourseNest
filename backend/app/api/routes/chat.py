@@ -10,8 +10,7 @@ from app.ai.service import AIService
 from app.core.dependencies import get_current_user
 from app.db.session import get_db
 
-from app.models.user import User
-from app.models.conversation import Conversation
+from app.models import User, Conversation
 
 from app.schemas.chat import (
     ChatRequest,

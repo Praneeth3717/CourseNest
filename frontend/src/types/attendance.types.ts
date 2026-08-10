@@ -1,8 +1,5 @@
 // attendance.types.ts
 
-/* Confirm actual enum values against app.models.attendance.AttendanceStatus —
-   other enums in this codebase (SessionStatusEnum, CourseStatus) are uppercase,
-   so this is likely "PRESENT" | "ABSENT" rather than lowercase. Update if needed. */
 export type AttendanceStatus =
     | "present"
     | "absent";

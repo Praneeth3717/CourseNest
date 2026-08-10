@@ -22,14 +22,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db
 
-from app.models.user import User
-from app.models.role import Role
-from app.models.teacher import Teacher
-from app.models.student import GenderEnum
-from app.models.course import Course, CourseStatus
-from app.models.classSession import ClassSession, SessionStatusEnum
-from app.models.enrollment import Enrollment
-from app.models.attendance import Attendance, AttendanceStatus
+from app.models import User, Role, Teacher, Course, ClassSession, Enrollment, Attendance
 
 from app.schemas.classSession import SessionData
 from app.api.routes.classSession import serialize_classSession
@@ -48,7 +41,7 @@ from app.schemas.teacher import (
     CourseSummaryResponse,
     NextSessionResponse,
 )
-from app.schemas.course import CourseData, CourseStatus
+from app.schemas.course import CourseData
 
 from app.api.routes.course import serialize_course
 from app.core.dependencies import require_role
@@ -62,7 +55,14 @@ from app.services.email_service import send_password_setup_email
 
 from app.core.config import settings
 
-from app.core.enums import RoleEnum
+from app.core.enums import (
+    RoleEnum,
+    GenderEnum,
+    CourseStatus,
+    AttendanceStatus,
+    SessionStatusEnum,
+)
+
 from app.utils.files import build_file_url, delete_file
 
 router = APIRouter(prefix="/teachers", tags=["Teachers"])

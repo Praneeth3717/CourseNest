@@ -5,7 +5,7 @@ from sqlalchemy.orm import selectinload
 
 from app.ai.graph.context import RuntimeContext
 from app.ai.tools.schemas import StudentProfile, ToolResult
-from app.models.student import Student
+from app.models import Student
 
 
 @tool

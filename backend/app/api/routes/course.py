@@ -20,17 +20,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db
 
-from app.models.course import Course, CourseStatus
-from app.models.user import User
-from app.models.teacher import Teacher
-from app.models.enrollment import Enrollment
-from app.models.student import Student
-from app.models.classSession import SessionStatusEnum
-from app.models.attendance import Attendance
+from app.models import Course, User, Teacher, Enrollment, Student, Attendance
 
 from app.core.dependencies import require_role
 
-from app.core.enums import RoleEnum
+from app.core.enums import RoleEnum, CourseStatus, SessionStatusEnum
 from app.utils.files import build_file_url, delete_file
 
 from app.schemas.course import (

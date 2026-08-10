@@ -6,7 +6,7 @@ from fastapi import HTTPException, status
 from sqlalchemy import select, update, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.student_token_quota import StudentTokenQuota
+from app.models import StudentTokenQuota
 
 
 async def _reset_if_due(

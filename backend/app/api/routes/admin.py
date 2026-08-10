@@ -7,15 +7,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db
 
-from app.models.user import User
-from app.models.teacher import Teacher
-from app.models.course import Course, CourseStatus
-from app.models.classSession import ClassSession, SessionStatusEnum
-from app.models.student import Student
-from app.models.enrollment import Enrollment
+from app.models import User, Teacher, Course, ClassSession, Student, Enrollment
 
 from app.core.dependencies import require_role
-from app.core.enums import RoleEnum
+from app.core.enums import RoleEnum, CourseStatus, SessionStatusEnum
 
 from app.schemas.admin import (
     DashboardResponse,

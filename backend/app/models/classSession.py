@@ -9,13 +9,7 @@ from sqlalchemy.sql import func
 
 from app.db.base import Base
 
-
-class SessionStatusEnum(str, enum.Enum):
-    PENDING = "PENDING"
-    ACCEPTED = "ACCEPTED"
-    REJECTED = "REJECTED"
-    CANCELLED = "CANCELLED"
-    COMPLETED = "COMPLETED"
+from app.core.enums import SessionStatusEnum
 
 
 class ClassSession(Base):

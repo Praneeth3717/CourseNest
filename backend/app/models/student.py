@@ -1,5 +1,4 @@
 import uuid
-from enum import Enum
 from datetime import date, datetime
 
 from sqlalchemy import String, Date, DateTime, ForeignKey, Enum as SqlEnum
@@ -8,14 +7,12 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
 from app.db.base import Base
-from app.models.enrollment import Enrollment
-from app.models.student_token_quota import StudentTokenQuota
+from app.core.enums import GenderEnum
 
+from typing import TYPE_CHECKING
 
-class GenderEnum(str, Enum):
-    MALE = "Male"
-    FEMALE = "Female"
-    OTHER = "Other"
+if TYPE_CHECKING:
+    from app.models import Enrollment
 
 
 class Student(Base):

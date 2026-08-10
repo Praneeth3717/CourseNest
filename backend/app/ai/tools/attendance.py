@@ -9,10 +9,9 @@ from sqlalchemy.orm import selectinload
 
 from app.ai.graph.context import RuntimeContext
 from app.ai.tools.schemas import AttendanceRecord, ToolResult, AttendanceSummary
-from app.models.attendance import Attendance, AttendanceStatus
-from app.models.classSession import ClassSession, SessionStatusEnum
-from app.models.course import Course
-from app.models.enrollment import Enrollment
+from app.models import Attendance, ClassSession, Course, Enrollment
+
+from app.core.enums import AttendanceStatus, SessionStatusEnum
 
 from app.utils.progress import calculate_course_progress, calculate_student_progress
 

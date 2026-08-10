@@ -7,7 +7,8 @@ from sqlalchemy.orm import selectinload
 
 from app.ai.graph.context import RuntimeContext
 from app.ai.tools.schemas import CourseDetail, CourseSummary, ToolResult
-from app.models.course import Course, CourseStatus
+from app.models import Course
+from app.core.enums import CourseStatus
 
 
 @tool

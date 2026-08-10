@@ -3,7 +3,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db
-from app.models.role import Role
+from app.models import Role
 from app.schemas.role import RoleResponse
 
 router = APIRouter(prefix="/roles", tags=["Roles"])
