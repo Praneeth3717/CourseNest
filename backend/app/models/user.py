@@ -8,6 +8,11 @@ from sqlalchemy.sql import func
 
 from app.db.base import Base
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.models import Role, Teacher, Student
+
 
 class User(Base):
     __tablename__ = "users"
@@ -38,12 +43,20 @@ class User(Base):
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
 
-    role = relationship("Role", back_populates="users")
+    # Relationships
 
-    student = relationship(
-        "Student", back_populates="user", uselist=False, cascade="all, delete-orphan"
+    role: Mapped["Role"] = relationship()
+
+    student: Mapped["Student | None"] = relationship(
+        back_populates="user",
+        uselist=False,
+        cascade="all, delete-orphan",
+        passive_deletes=True,
     )
 
-    teacher = relationship(
-        "Teacher", back_populates="user", uselist=False, cascade="all, delete-orphan"
+    teacher: Mapped["Teacher | None"] = relationship(
+        back_populates="user",
+        uselist=False,
+        cascade="all, delete-orphan",
+        passive_deletes=True,
     )

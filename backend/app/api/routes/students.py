@@ -17,7 +17,7 @@ from fastapi import (
     Query,
 )
 
-from sqlalchemy import select, func, or_, case
+from sqlalchemy import select, func, or_, case, delete
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -353,7 +353,11 @@ async def get_course_summary(
     )
 
 
-@router.post("/", response_model=StudentData, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/",
+    response_model=StudentData,
+    status_code=status.HTTP_201_CREATED,
+)
 async def create_student(
     data: CreateStudentRequest,
     db: AsyncSession = Depends(get_db),
@@ -378,8 +382,18 @@ async def create_student(
         )
 
     token = generate_password_token()
-
     expiry = get_password_token_expiry()
+
+    quota = StudentTokenQuota(
+        daily_quota=settings.STUDENT_DAILY_TOKEN_QUOTA,
+        used_today=0,
+        reset_at=date.today() + timedelta(days=1),
+    )
+
+    student = Student(
+        full_name=data.full_name,
+        token_quota=quota,
+    )
 
     user = User(
         email=data.email,
@@ -387,29 +401,10 @@ async def create_student(
         is_active=False,
         password_token=token,
         password_token_expires_at=expiry,
+        student=student,
     )
 
     db.add(user)
-
-    await db.flush()
-
-    student = Student(
-        user_id=user.id,
-        full_name=data.full_name,
-    )
-
-    db.add(student)
-
-    await db.flush()
-
-    quota = StudentTokenQuota(
-        student_id=student.id,
-        daily_quota=settings.STUDENT_DAILY_TOKEN_QUOTA,
-        used_today=0,
-        reset_at=date.today() + timedelta(days=1),
-    )
-
-    db.add(quota)
 
     await db.commit()
 
@@ -607,7 +602,10 @@ async def update_student(
     return serialize_student(student)
 
 
-@router.delete("/{student_id}", response_model=MessageResponse)
+@router.delete(
+    "/{student_id}",
+    response_model=MessageResponse,
+)
 async def delete_student(
     student_id: UUID,
     db: AsyncSession = Depends(get_db),
@@ -616,7 +614,6 @@ async def delete_student(
     result = await db.execute(
         select(Student)
         .options(
-            selectinload(Student.user),
             selectinload(Student.enrollments).selectinload(Enrollment.certificate),
         )
         .where(Student.id == student_id)
@@ -633,15 +630,17 @@ async def delete_student(
     profile_img = student.profile_image
 
     certificate_files = [
-        enrollement.certificate.storage_key
-        for enrollement in student.enrollments
-        if enrollement.certificate
+        enrollment.certificate.storage_key
+        for enrollment in student.enrollments
+        if enrollment.certificate
     ]
 
-    await db.delete(student.user)
+    await db.execute(delete(User).where(User.id == student.user_id))
+
     await db.commit()
 
-    delete_file(profile_img)
+    if profile_img:
+        delete_file(profile_img)
 
     for storage_key in certificate_files:
         delete_file(storage_key)

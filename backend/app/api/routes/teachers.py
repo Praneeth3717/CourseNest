@@ -16,7 +16,7 @@ from fastapi import (
     Query,
 )
 
-from sqlalchemy import select, func, or_, case
+from sqlalchemy import select, func, or_, case, delete
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -316,7 +316,11 @@ async def get_course_summary(
     )
 
 
-@router.post("/", response_model=TeacherData, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/",
+    response_model=TeacherData,
+    status_code=status.HTTP_201_CREATED,
+)
 async def create_teacher(
     data: CreateTeacherRequest,
     db: AsyncSession = Depends(get_db),
@@ -341,7 +345,6 @@ async def create_teacher(
         )
 
     token = generate_password_token()
-
     expiry = get_password_token_expiry()
 
     user = User(
@@ -352,24 +355,15 @@ async def create_teacher(
         password_token_expires_at=expiry,
     )
 
-    db.add(user)
-
-    await db.flush()
-
     teacher = Teacher(
-        user_id=user.id,
         full_name=data.full_name,
     )
 
-    db.add(teacher)
+    user.teacher = teacher
+    db.add(user)
 
     await db.commit()
-
-    teacher = await db.scalar(
-        select(Teacher)
-        .options(selectinload(Teacher.user))
-        .where(Teacher.id == teacher.id)
-    )
+    await db.refresh(teacher)
 
     setup_link = f"{settings.FRONTEND_URL}/setup-password?token={token}"
 
@@ -573,11 +567,7 @@ async def delete_teacher(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(require_role(RoleEnum.ADMIN)),
 ):
-    result = await db.execute(
-        select(Teacher)
-        .options(selectinload(Teacher.user))
-        .where(Teacher.id == teacher_id)
-    )
+    result = await db.execute(select(Teacher).where(Teacher.id == teacher_id))
 
     teacher = result.scalar_one_or_none()
 
@@ -589,10 +579,12 @@ async def delete_teacher(
 
     profile_img = teacher.profile_image
 
-    await db.delete(teacher.user)
+    await db.execute(delete(User).where(User.id == teacher.user_id))
+
     await db.commit()
 
-    delete_file(profile_img)
+    if profile_img:
+        delete_file(profile_img)
 
     return {"message": "Teacher deleted successfully"}
 

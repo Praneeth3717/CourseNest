@@ -1,3 +1,5 @@
+import logging
+
 from uuid import UUID
 from datetime import datetime, timezone
 
@@ -5,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 
 from sqlalchemy import select
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import joinedload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
@@ -14,7 +16,7 @@ from app.core.enums import RoleEnum
 from app.core.dependencies import require_role
 
 
-from app.models import User
+from app.models import User, Teacher, Student
 from app.services.email_service import (
     send_password_reset_email,
     send_password_setup_email,
@@ -48,21 +50,21 @@ from app.utils.files import build_file_url
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
+logger = logging.getLogger(__name__)
+
 
 @router.post("/login", response_model=LoginResponse)
 async def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: AsyncSession = Depends(get_db),
 ):
-    result = await db.execute(
+    user = await db.scalar(
         select(User)
-        .options(selectinload(User.role))
+        .options(joinedload(User.role))
         .where(User.email == form_data.username)
     )
 
-    user = result.scalar_one_or_none()
-
-    if not user:
+    if user is None or not user.password_hash:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid credentials",
@@ -72,12 +74,6 @@ async def login(
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Account is inactive",
-        )
-
-    if not user.password_hash:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid credentials",
         )
 
     if not verify_password(form_data.password, user.password_hash):
@@ -94,10 +90,9 @@ async def login(
     )
 
     refresh_token = create_refresh_token()
-    refresh_expiry = get_refresh_token_expiry()
 
     user.refresh_token = refresh_token
-    user.refresh_token_expires_at = refresh_expiry
+    user.refresh_token_expires_at = get_refresh_token_expiry()
 
     await db.commit()
 
@@ -112,15 +107,13 @@ async def refresh_access_token(
     data: AccessTokenRequest,
     db: AsyncSession = Depends(get_db),
 ):
-    result = await db.execute(
+    user = await db.scalar(
         select(User)
-        .options(selectinload(User.role))
+        .options(joinedload(User.role))
         .where(User.refresh_token == data.refresh_token)
     )
 
-    user = result.scalar_one_or_none()
-
-    if not user:
+    if user is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid refresh token",
@@ -133,8 +126,8 @@ async def refresh_access_token(
         )
 
     if (
-        not user.refresh_token_expires_at
-        or user.refresh_token_expires_at < datetime.now(timezone.utc)
+        user.refresh_token_expires_at is None
+        or user.refresh_token_expires_at <= datetime.now(timezone.utc)
     ):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -148,14 +141,16 @@ async def refresh_access_token(
         }
     )
 
-    return AccessTokenResponse(access_token=access_token)
+    return AccessTokenResponse(
+        access_token=access_token,
+    )
 
 
 @router.post("/logout", response_model=MessageResponse)
 async def logout(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-):
+) -> MessageResponse:
     current_user.refresh_token = None
     current_user.refresh_token_expires_at = None
 
@@ -171,20 +166,18 @@ async def logout(
 async def setup_password(
     data: PasswordTokenRequest,
     db: AsyncSession = Depends(get_db),
-):
-    result = await db.execute(select(User).where(User.password_token == data.token))
+) -> MessageResponse:
+    user = await db.scalar(select(User).where(User.password_token == data.token))
 
-    user = result.scalar_one_or_none()
-
-    if not user:
+    if user is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid setup token",
         )
 
     if (
-        not user.password_token_expires_at
-        or user.password_token_expires_at < datetime.now(timezone.utc)
+        user.password_token_expires_at is None
+        or user.password_token_expires_at <= datetime.now(timezone.utc)
     ):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -214,35 +207,43 @@ async def setup_password(
 async def request_password_reset(
     data: ForgotPasswordRequest,
     db: AsyncSession = Depends(get_db),
-):
-    result = await db.execute(select(User).where(User.email == data.email))
+) -> MessageResponse:
 
-    user = result.scalar_one_or_none()
+    user = await db.scalar(select(User).where(User.email == data.email))
 
-    if not user:
+    if user is None or not user.is_active:
         return MessageResponse(
             message=(
-                "If an account with this email exists,a password reset link has been sent."
+                "If an account exists with this email, "
+                "a password reset link has been sent."
             )
         )
 
     token = generate_password_token()
+    expires_at = get_password_token_expiry()
 
     user.password_token = token
-    user.password_token_expires_at = get_password_token_expiry()
+    user.password_token_expires_at = expires_at
 
     await db.commit()
 
-    reset_link = f"{settings.FRONTEND_URL}" f"/reset-password?token={token}"
+    reset_link = f"{settings.FRONTEND_URL}/reset-password?token={token}"
 
-    await send_password_reset_email(
-        user.email,
-        reset_link,
-    )
+    try:
+        await send_password_reset_email(
+            email=user.email,
+            reset_link=reset_link,
+        )
+    except Exception:
+        logger.exception(
+            "Failed to send password reset email to %s",
+            user.email,
+        )
 
     return MessageResponse(
         message=(
-            "If an account with this email exists,a password reset link has been sent."
+            "If an account exists with this email, "
+            "a password reset link has been sent."
         )
     )
 
@@ -254,30 +255,38 @@ async def request_password_reset(
 async def reset_password(
     data: PasswordTokenRequest,
     db: AsyncSession = Depends(get_db),
-):
-    result = await db.execute(select(User).where(User.password_token == data.token))
+) -> MessageResponse:
 
-    user = result.scalar_one_or_none()
+    user = await db.scalar(select(User).where(User.password_token == data.token))
 
-    if not user:
+    if user is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid reset token",
         )
 
     if (
-        not user.password_token_expires_at
-        or user.password_token_expires_at < datetime.now(timezone.utc)
+        user.password_token_expires_at is None
+        or user.password_token_expires_at <= datetime.now(timezone.utc)
     ):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Reset link has expired",
         )
 
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Account is inactive",
+        )
+
     user.password_hash = hash_password(data.password)
 
     user.password_token = None
     user.password_token_expires_at = None
+
+    user.refresh_token = None
+    user.refresh_token_expires_at = None
 
     await db.commit()
 
@@ -290,13 +299,14 @@ async def reset_password(
 )
 async def change_password(
     data: ChangePasswordRequest,
-    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
-):
-    if not current_user.password_hash:
+    db: AsyncSession = Depends(get_db),
+) -> MessageResponse:
+
+    if current_user.password_hash is None:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Password is not set",
+            detail="Password is not set for this account",
         )
 
     if not verify_password(
@@ -308,13 +318,10 @@ async def change_password(
             detail="Current password is incorrect",
         )
 
-    if verify_password(
-        data.new_password,
-        current_user.password_hash,
-    ):
+    if data.current_password == data.new_password:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="New password must be different",
+            detail="New password must be different from current password",
         )
 
     current_user.password_hash = hash_password(data.new_password)
@@ -334,13 +341,12 @@ async def change_password(
 async def resend_setup_email(
     user_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(require_role(RoleEnum.ADMIN)),
-):
-    result = await db.execute(select(User).where(User.id == user_id))
+    _: User = Depends(require_role(RoleEnum.ADMIN)),
+) -> MessageResponse:
 
-    user = result.scalar_one_or_none()
+    user = await db.scalar(select(User).where(User.id == user_id))
 
-    if not user:
+    if user is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found",
@@ -360,7 +366,7 @@ async def resend_setup_email(
 
     await db.commit()
 
-    setup_link = f"{settings.FRONTEND_URL}" f"/setup-password?token={token}"
+    setup_link = f"{settings.FRONTEND_URL}/setup-password?token={token}"
 
     await send_password_setup_email(
         email=user.email,
@@ -370,40 +376,36 @@ async def resend_setup_email(
     return MessageResponse(message="Setup email resent successfully")
 
 
-@router.get("/me", response_model=CurrentUserResponse)
+@router.get(
+    "/me",
+    response_model=CurrentUserResponse,
+)
 async def get_current_user_profile(
     current_user: User = Depends(get_current_user),
-):
+    db: AsyncSession = Depends(get_db),
+) -> CurrentUserResponse:
+
     profile = None
 
-    if current_user.role.name == RoleEnum.TEACHER and current_user.teacher:
-        profile = TeacherProfileResponse(
-            id=current_user.teacher.id,
-            user_id=current_user.teacher.user_id,
-            full_name=current_user.teacher.full_name,
-            phone=current_user.teacher.phone,
-            dob=current_user.teacher.dob,
-            gender=current_user.teacher.gender,
-            specialization=current_user.teacher.specialization,
-            qualification=current_user.teacher.qualification,
-            experience_years=current_user.teacher.experience_years,
-            address=current_user.teacher.address,
-            profile_image=build_file_url(current_user.teacher.profile_image),
-            created_at=current_user.teacher.created_at,
+    if current_user.role.name == RoleEnum.TEACHER.value:
+        teacher = await db.scalar(
+            select(Teacher).where(Teacher.user_id == current_user.id)
         )
 
-    elif current_user.role.name == RoleEnum.STUDENT and current_user.student:
-        profile = StudentProfileResponse(
-            id=current_user.student.id,
-            user_id=current_user.student.user_id,
-            full_name=current_user.student.full_name,
-            phone=current_user.student.phone,
-            dob=current_user.student.dob,
-            gender=current_user.student.gender,
-            address=current_user.student.address,
-            profile_image=build_file_url(current_user.student.profile_image),
-            created_at=current_user.student.created_at,
+        if teacher:
+            profile = TeacherProfileResponse.model_validate(teacher)
+
+            profile.profile_image = build_file_url(teacher.profile_image)
+
+    elif current_user.role.name == RoleEnum.STUDENT.value:
+        student = await db.scalar(
+            select(Student).where(Student.user_id == current_user.id)
         )
+
+        if student:
+            profile = StudentProfileResponse.model_validate(student)
+
+            profile.profile_image = build_file_url(student.profile_image)
 
     return CurrentUserResponse(
         id=current_user.id,
